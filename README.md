@@ -74,3 +74,5 @@ Your sign-in session, schedules, and timers are in `%APPDATA%\dev.mewt.eero-widg
 ## Disclaimer
 
 Tollgate is not made by or affiliated with eero or Amazon. "eero" is a trademark of its owner.
+
+Tollgate talks to eero's unofficial cloud API. eero can change or block that API at any time, which can stop Tollgate from working. Use it at your own risk and follow eero's terms of service.
