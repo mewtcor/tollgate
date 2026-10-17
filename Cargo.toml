@@ -2,6 +2,10 @@
 name = "tollgate"
 version = "0.1.0"
 edition = "2021"
+description = "Windows desktop app to pause, block, and schedule devices on an eero mesh Wi-Fi network"
+authors = ["mewtcor"]
+repository = "https://github.com/mewtcor/tollgate"
+readme = "README.md"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

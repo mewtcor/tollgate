@@ -2,3 +2,6 @@ target/
 gen/
 target-verify/
 .verify/
+.claude/
+.tauri-cli-install.log
+target-dist/
