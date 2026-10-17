@@ -15,7 +15,7 @@ use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tokio::sync::Mutex;
 
 const HOST: &str = "https://api-user.e2ro.com";
-const UA: &str = "eero-ios/2026.8.1 (iPhone; iOS 18.5)";
+const UA: &str = concat!("Tollgate/", env!("CARGO_PKG_VERSION"));
 const ACTIONS: [&str; 4] = ["pause", "unpause", "block", "unblock"];
 
 #[derive(Default)]
