@@ -8,6 +8,14 @@ I built Tollgate as a parent. I had too little time to switch off my kids' inter
 
 This guide is for people who use the app. To build it from source, run `cargo build --release` and open `target/release/tollgate.exe`.
 
+## Install
+
+1. Download `Tollgate_0.1.0_x64-setup.exe` from the [latest release](https://github.com/mewtcor/tollgate/releases/latest).
+2. Run the installer.
+3. If Windows shows "Windows protected your PC", click **More info**, then **Run anyway**. The installer is not code-signed, so Windows warns about every new download.
+
+The installer is for 64-bit Windows. I tested it only on Windows 11.
+
 ## Sign in
 
 1. Open Tollgate.
@@ -72,6 +80,8 @@ When a device reconnects under a new entry, its schedules, nickname, and groups 
 ## Where the app stores data
 
 Your sign-in session, schedules, and timers are in `%APPDATA%\dev.mewt.eero-widget`. Delete `session.txt` there to sign out by hand.
+
+Tollgate saves the session in `session.txt` as plain text. Anyone who can read your Windows user profile can use it to act on your eero account. Click **Sign out** in the title bar to delete it when you stop using the app.
 
 ## Disclaimer
 
