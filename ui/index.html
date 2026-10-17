@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eero Widget</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="titlebar" data-tauri-drag-region>
+  <div class="brand" data-tauri-drag-region>
+    <span class="logo"></span>
+    <span class="title" data-tauri-drag-region>Network</span>
+    <span class="live" id="live" title="Auto-refreshing"><i></i><span id="updated">connecting</span></span>
+  </div>
+  <div class="winbtns">
+    <button id="refresh" class="icon" title="Refresh now" aria-label="Refresh"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
+    <button id="pin" class="icon" title="Keep on top" aria-label="Keep on top"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 14v7"/></svg></button>
+    <button id="logout" class="icon" title="Sign out" aria-label="Sign out" hidden><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></button>
+    <button id="min" class="icon" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+    <button id="close" class="icon close" title="Close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <section id="login" class="login" hidden>
+    <div class="login-card">
+      <div class="logo big"></div>
+      <h1>Sign in to eero</h1>
+      <p class="muted" id="login-hint">Use the email or phone number on your eero account. We will send you a code.</p>
+      <form id="f-user">
+        <input id="user" placeholder="Email or phone" autocomplete="username" required>
+        <button class="primary" type="submit">Send code</button>
+      </form>
+      <form id="f-code" hidden>
+        <input id="code" placeholder="6 digit code" inputmode="numeric" autocomplete="one-time-code" required>
+        <button class="primary" type="submit">Verify</button>
+      </form>
+      <p class="err" id="login-err"></p>
+    </div>
+  </section>
+
+  <section id="dash" hidden>
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <div class="chips" id="chips">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="online">Online</button>
+        <button class="chip" data-f="paused">Paused</button>
+        <button class="chip" data-f="blocked">Blocked</button>
+      </div>
+      <input id="q" class="search" type="search" placeholder="Search devices" aria-label="Search devices">
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Daily schedules</h2><span class="muted" id="sched-note"></span></div>
+      <div id="sched-list" class="sched-list"></div>
+      <form id="sched-form" class="sched-form">
+        <select id="sm" aria-label="Device"></select>
+        <select id="sa" aria-label="Action">
+          <option value="pause">Pause</option><option value="unpause">Resume</option>
+          <option value="block">Block</option><option value="unblock">Unblock</option>
+        </select>
+        <input id="st" type="time" value="21:00" required aria-label="Time">
+        <button class="primary" type="submit">Add</button>
+      </form>
+    </section>
+  </section>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
