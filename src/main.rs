@@ -2,10 +2,16 @@
 
 use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 
+use chrono::Datelike;
 use reqwest::{header, Client, Method};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{
+    menu::{CheckMenuItem, Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Manager, State, WindowEvent,
+};
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tokio::sync::Mutex;
 
 const HOST: &str = "https://api-user.e2ro.com";
@@ -23,6 +29,13 @@ struct Eero {
     http: Client,
     dir: PathBuf,
     st: Mutex<Inner>,
+    timers: std::sync::Mutex<Vec<Timer>>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct Timer {
+    mac: String,
+    resume_at: i64,
 }
 
 #[derive(Serialize)]
@@ -35,6 +48,7 @@ struct Device {
     ip: String,
     maker: String,
     wired: bool,
+    resume_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -42,6 +56,15 @@ struct Schedule {
     mac: String,
     action: String,
     time: String,
+    /// 0 = Sunday .. 6 = Saturday. Empty means every day, which is also what older schedules.json files hold.
+    #[serde(default)]
+    days: Vec<u8>,
+    #[serde(default = "yes")]
+    enabled: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 enum Body {
@@ -65,17 +88,38 @@ fn s(v: &Value, k: &str) -> String {
 impl Eero {
     fn new(dir: PathBuf) -> Self {
         let token = fs::read_to_string(dir.join("session.txt")).ok().map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+        let timers = fs::read_to_string(dir.join("timers.json")).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
         Eero {
             http: Client::new(),
             dir,
             st: Mutex::new(Inner { token, ..Default::default() }),
+            timers: std::sync::Mutex::new(timers),
+        }
+    }
+
+    fn save_timers(&self, t: &[Timer]) {
+        let _ = fs::create_dir_all(&self.dir);
+        let _ = fs::write(self.dir.join("timers.json"), serde_json::to_string(t).unwrap());
+    }
+
+    fn forget_timer(&self, mac: &str) {
+        let mut t = self.timers.lock().unwrap();
+        let n = t.len();
+        t.retain(|x| x.mac != mac);
+        if t.len() != n {
+            self.save_timers(&t);
         }
     }
 
     async fn call(&self, method: Method, url: &str, token: Option<&str>, body: Body) -> Result<Value, String> {
+        // lets verification point the app at a fake Eero server
+        let url = match std::env::var("EERO_HOST") {
+            Ok(h) => url.replacen(HOST, &h, 1),
+            Err(_) => url.to_string(),
+        };
         let mut rb = self
             .http
-            .request(method, url)
+            .request(method, &url)
             .header(header::ACCEPT, "application/json")
             .header(header::USER_AGENT, UA)
             .header(header::ACCEPT_LANGUAGE, "en-US");
@@ -132,12 +176,14 @@ impl Eero {
         let n = self.network(&t).await?;
         let v = self.call(Method::GET, &format!("{HOST}/2.2/networks/{n}/devices"), Some(&t), Body::None).await?;
         let list = v["data"].as_array().or_else(|| v["data"]["devices"].as_array()).cloned().unwrap_or_default();
+        let timers = self.timers.lock().unwrap().clone();
         Ok(list
             .iter()
             .map(|d| {
                 let mac = s(d, "mac");
                 let name = [s(d, "nickname"), s(d, "display_name"), s(d, "hostname")].into_iter().find(|x| !x.is_empty()).unwrap_or_else(|| mac.clone());
                 Device {
+                    resume_at: timers.iter().find(|t| t.mac == mac).map(|t| t.resume_at),
                     mac,
                     name,
                     connected: d["connected"].as_bool().unwrap_or(false),
@@ -172,6 +218,9 @@ impl Eero {
                 let url = format!("{HOST}/2.2/networks/{n}/blacklist/{mac}");
                 self.call(Method::DELETE, &url, t, Body::None).await?;
             }
+        }
+        if action == "pause" || action == "unpause" {
+            self.forget_timer(mac);
         }
         Ok(())
     }
@@ -223,6 +272,18 @@ async fn device_action(e: State<'_, Arc<Eero>>, mac: String, action: String) -> 
 }
 
 #[tauri::command]
+async fn pause_for(e: State<'_, Arc<Eero>>, mac: String, minutes: i64) -> Result<(), String> {
+    if !(1..=1440).contains(&minutes) {
+        return Err("Timer must be 1 to 1440 minutes".into());
+    }
+    e.apply(&mac, "pause").await?;
+    let mut t = e.timers.lock().unwrap();
+    t.push(Timer { mac, resume_at: chrono::Utc::now().timestamp() + minutes * 60 });
+    e.save_timers(&t);
+    Ok(())
+}
+
+#[tauri::command]
 fn get_schedules(e: State<'_, Arc<Eero>>) -> Vec<Schedule> {
     e.schedules()
 }
@@ -231,7 +292,7 @@ fn get_schedules(e: State<'_, Arc<Eero>>) -> Vec<Schedule> {
 fn set_schedules(e: State<'_, Arc<Eero>>, items: Vec<Schedule>) -> Result<(), String> {
     for i in &items {
         chrono::NaiveTime::parse_from_str(&i.time, "%H:%M").map_err(|_| "Time must be HH:MM")?;
-        if !valid_mac(&i.mac) || !ACTIONS.contains(&i.action.as_str()) {
+        if !valid_mac(&i.mac) || !ACTIONS.contains(&i.action.as_str()) || i.days.iter().any(|&d| d > 6) {
             return Err("Bad schedule".into());
         }
     }
@@ -242,28 +303,91 @@ fn set_schedules(e: State<'_, Arc<Eero>>, items: Vec<Schedule>) -> Result<(), St
 async fn scheduler(app: AppHandle, e: Arc<Eero>) {
     let mut last = String::new();
     loop {
-        let now = chrono::Local::now().format("%H:%M").to_string();
-        if now != last && e.st.lock().await.token.is_some() {
-            last = now.clone();
-            for sc in e.schedules().into_iter().filter(|x| x.time == now) {
-                let ok = e.apply(&sc.mac, &sc.action).await;
-                let _ = app.emit("schedule-ran", json!({ "mac": sc.mac, "action": sc.action, "error": ok.err() }));
+        if e.st.lock().await.token.is_some() {
+            // a failed resume stays queued and retries on the next tick
+            let ts = chrono::Utc::now().timestamp();
+            let due: Vec<String> = e.timers.lock().unwrap().iter().filter(|t| t.resume_at <= ts).map(|t| t.mac.clone()).collect();
+            for mac in due {
+                if e.apply(&mac, "unpause").await.is_ok() {
+                    let _ = app.emit("schedule-ran", json!({ "mac": mac, "action": "unpause", "error": Value::Null }));
+                }
+            }
+
+            let local = chrono::Local::now();
+            let now = local.format("%H:%M").to_string();
+            if now != last {
+                last = now.clone();
+                let today = local.weekday().num_days_from_sunday() as u8;
+                for sc in e.schedules().into_iter().filter(|x| x.enabled && x.time == now && (x.days.is_empty() || x.days.contains(&today))) {
+                    let ok = e.apply(&sc.mac, &sc.action).await;
+                    let _ = app.emit("schedule-ran", json!({ "mac": sc.mac, "action": sc.action, "error": ok.err() }));
+                }
             }
         }
         tokio::time::sleep(Duration::from_secs(20)).await;
     }
 }
 
+fn show(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+    }
+}
+
+fn tray(app: &tauri::App) -> tauri::Result<()> {
+    let auto = CheckMenuItem::with_id(app, "auto", "Start with Windows", true, app.autolaunch().is_enabled().unwrap_or(false), None::<&str>)?;
+    let menu = Menu::with_items(
+        app,
+        &[&MenuItem::with_id(app, "show", "Show", true, None::<&str>)?, &auto, &MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?],
+    )?;
+    TrayIconBuilder::new()
+        .icon(app.default_window_icon().unwrap().clone())
+        .tooltip("Tollgate")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(move |app, ev| match ev.id.as_ref() {
+            "show" => show(app),
+            "auto" => {
+                let a = app.autolaunch();
+                let _ = if a.is_enabled().unwrap_or(false) { a.disable() } else { a.enable() };
+                let _ = auto.set_checked(a.is_enabled().unwrap_or(false));
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, ev| {
+            if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = ev {
+                show(tray.app_handle());
+            }
+        })
+        .build(app)?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| show(app)))
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--hidden"])))
+        .on_window_event(|w, ev| {
+            if let WindowEvent::CloseRequested { api, .. } = ev {
+                api.prevent_close();
+                let _ = w.hide();
+            }
+        })
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             let eero = Arc::new(Eero::new(dir));
             app.manage(eero.clone());
             tauri::async_runtime::spawn(scheduler(app.handle().clone(), eero));
+            tray(app)?;
+            if !std::env::args().any(|a| a == "--hidden") {
+                show(app.handle());
+            }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![status, login, verify, logout, devices, device_action, get_schedules, set_schedules])
+        .invoke_handler(tauri::generate_handler![status, login, verify, logout, devices, device_action, pause_for, get_schedules, set_schedules])
         .run(tauri::generate_context!())
-        .expect("failed to run eero widget");
+        .expect("failed to run Tollgate");
 }

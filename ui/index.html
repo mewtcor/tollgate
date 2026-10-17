@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Eero Widget</title>
+<title>Tollgate</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,7 +18,7 @@
     <button id="pin" class="icon" title="Keep on top" aria-label="Keep on top"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 14v7"/></svg></button>
     <button id="logout" class="icon" title="Sign out" aria-label="Sign out" hidden><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></button>
     <button id="min" class="icon" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-    <button id="close" class="icon close" title="Close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <button id="close" class="icon close" title="Hide to tray" aria-label="Hide to tray"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
 </header>
 
@@ -53,21 +53,55 @@
       <input id="q" class="search" type="search" placeholder="Search devices" aria-label="Search devices">
     </div>
 
+    <div class="groups" id="groups" hidden>
+      <div class="chips" id="group-chips"></div>
+      <form id="group-form" hidden>
+        <input id="gname" placeholder="Group name" maxlength="24" required aria-label="Group name">
+        <button class="primary" type="submit">Save group</button>
+      </form>
+      <div class="bulk" id="bulk" hidden>
+        <b id="bulk-n"></b>
+        <button class="btn" data-b="pause">Pause</button>
+        <button class="btn" data-b="unpause">Resume</button>
+        <select class="btn timer" id="bulk-timer" aria-label="Pause for a while">
+          <option value="">Timer</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option><option value="240">4 hours</option>
+        </select>
+        <button class="btn danger" data-b="block">Block</button>
+        <button class="btn" data-b="unblock">Unblock</button>
+        <button class="btn" id="bulk-clear">Clear</button>
+      </div>
+    </div>
+
     <div class="grid" id="grid"></div>
 
     <section class="panel">
       <div class="panel-head"><h2>Daily schedules</h2><span class="muted" id="sched-note"></span></div>
       <div id="sched-list" class="sched-list"></div>
       <form id="sched-form" class="sched-form">
+        <div class="days" id="days">
+          <button type="button" class="chip on" data-d="0">Sun</button><button type="button" class="chip on" data-d="1">Mon</button><button type="button" class="chip on" data-d="2">Tue</button><button type="button" class="chip on" data-d="3">Wed</button><button type="button" class="chip on" data-d="4">Thu</button><button type="button" class="chip on" data-d="5">Fri</button><button type="button" class="chip on" data-d="6">Sat</button>
+          <span class="presets"><button type="button" data-p="1,2,3,4,5">Weekdays</button><button type="button" data-p="0,6">Weekends</button><button type="button" data-p="0,1,2,3,4,5,6">Every day</button></span>
+        </div>
         <select id="sm" aria-label="Device"></select>
         <select id="sa" aria-label="Action">
           <option value="pause">Pause</option><option value="unpause">Resume</option>
           <option value="block">Block</option><option value="unblock">Unblock</option>
         </select>
         <input id="st" type="time" value="21:00" required aria-label="Time">
-        <button class="primary" type="submit">Add</button>
+        <button class="primary" type="submit" id="sched-submit">Add</button>
+        <button class="btn cancel" type="button" id="sched-cancel" hidden>Cancel</button>
       </form>
     </section>
+
+    <details class="panel" id="swap">
+      <summary>Device got a new address?</summary>
+      <p class="muted">Pick the old entry and the new one. Its schedules, nickname and groups move over.</p>
+      <form id="swap-form" class="sched-form">
+        <select id="sw-from" aria-label="Old device"></select>
+        <select id="sw-to" aria-label="New device"></select>
+        <button class="primary" type="submit">Move settings</button>
+      </form>
+    </details>
   </section>
 </main>
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Eero Widget",
+  "productName": "Tollgate",
   "version": "0.1.0",
   "identifier": "dev.mewt.eero-widget",
   "build": { "frontendDist": "./ui" },
@@ -8,7 +8,8 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Eero Widget",
+        "title": "Tollgate",
+        "visible": false,
         "width": 1040,
         "height": 720,
         "minWidth": 420,

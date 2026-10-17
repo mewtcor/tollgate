@@ -75,13 +75,16 @@ select option { background: #151822; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .card {
-  position: relative; display: grid; grid-template-columns: 46px 1fr auto; gap: 4px 14px; align-items: center;
+  position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 4px 14px; min-width: 0; align-items: center;
   padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line);
   transition: transform 0.15s, background 0.15s, border-color 0.15s;
 }
 .card:hover { background: var(--surface-hi); transform: translateY(-1px); }
 .card.offline { opacity: 0.6; }
+.card.sel { border-color: rgba(129, 140, 248, 0.7); background: var(--surface-hi); }
+.pick { position: absolute; top: 6px; left: 6px; width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: #818cf8; }
 .avatar { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 700; font-size: 18px; background: hsl(var(--h) 70% 55% / 0.18); color: hsl(var(--h) 85% 72%); border: 1px solid hsl(var(--h) 70% 60% / 0.35); grid-row: span 2; }
+.meta { min-width: 0; }
 .meta h3 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta p { color: var(--muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill { justify-self: end; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -108,6 +111,32 @@ select option { background: #151822; }
 .time { font-variant-numeric: tabular-nums; color: var(--muted); }
 .sched-form { display: flex; gap: 8px; flex-wrap: wrap; }
 .sched-form select { flex: 1; min-width: 140px; }
+.days { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.days .chip { padding: 5px 12px; }
+.presets { margin-left: auto; display: flex; gap: 12px; }
+.presets button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 12px; }
+.presets button:hover { color: var(--text); }
+.groups { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.groups[hidden], #group-form[hidden] { display: none; }
+#group-form { display: flex; gap: 8px; margin-left: auto; }
+#group-form input { padding: 6px 12px; }
+#group-form .primary { padding: 6px 14px; }
+.chip i { font-style: normal; margin-left: 8px; opacity: 0.5; }
+.chip i:hover { opacity: 1; color: var(--bad); }
+.nick { width: 100%; padding: 2px 8px; font-size: 15px; font-weight: 600; border-radius: 8px; }
+.bulk { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bulk[hidden], .btn.cancel[hidden] { display: none; }
+.bulk .btn { flex: 0 0 auto; padding: 6px 14px; }
+.btn.cancel { flex: 0 0 auto; padding: 0 16px; }
+.btn.armed { background: rgba(248, 113, 113, 0.2); border-color: rgba(248, 113, 113, 0.6); color: var(--bad); }
+.tog { width: 16px; height: 16px; padding: 0; margin: 0; accent-color: #818cf8; cursor: pointer; }
+.sched.off { opacity: 0.5; }
+.sched.editing { border-color: rgba(129, 140, 248, 0.6); }
+#swap { margin-top: 12px; }
+#swap summary { cursor: pointer; font-weight: 600; }
+#swap p { margin: 10px 0 12px; }
+.btn.timer { flex: 0 0 auto; width: 78px; padding: 7px 6px; cursor: pointer; }
+.sched .days-label { font-size: 12px; color: var(--muted); }
 .primary { border: 0; cursor: pointer; padding: 9px 20px; border-radius: 12px; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--accent), #4f46e5); transition: filter 0.15s, transform 0.1s; }
 .primary:hover { filter: brightness(1.12); } .primary:active { transform: scale(0.98); }
 .muted { color: var(--muted); }
