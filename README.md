@@ -4,6 +4,8 @@ Tollgate is a Windows desktop app that controls the devices on your eero mesh Wi
 
 ![Tollgate showing four devices, a row of statistics, and the Daily schedules panel. The device names and addresses are sample data.](docs/screenshot.png)
 
+I built Tollgate as a parent. I had too little time to switch off my kids' internet by hand, so I made the app do it on a schedule.
+
 This guide is for people who use the app. To build it from source, run `cargo build --release` and open `target/release/tollgate.exe`.
 
 ## Sign in
