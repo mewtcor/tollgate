@@ -1,6 +1,6 @@
 [package]
 name = "tollgate"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Windows desktop app to pause, block, and schedule devices on an eero mesh Wi-Fi network"
 authors = ["mewtcor"]

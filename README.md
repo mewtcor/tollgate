@@ -10,7 +10,7 @@ This guide is for people who use the app. To build it from source, run `cargo bu
 
 ## Install
 
-1. Download `Tollgate_0.1.0_x64-setup.exe` from the [latest release](https://github.com/mewtcor/tollgate/releases/latest).
+1. Download `Tollgate_0.1.1_x64-setup.exe` from the [latest release](https://github.com/mewtcor/tollgate/releases/latest).
 2. Run the installer.
 3. If Windows shows "Windows protected your PC", click **More info**, then **Run anyway**. The installer is not code-signed, so Windows warns about every new download.
 
