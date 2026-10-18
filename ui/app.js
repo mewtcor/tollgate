@@ -85,16 +85,17 @@ function renderStats() {
 
 function card(d) {
   const st = state(d);
-  const sub = d.paused && d.resume_at
+  const ip = d.paused && d.resume_at
     ? `Resumes ${t12(new Date(d.resume_at * 1000).toTimeString().slice(0, 5))}`
-    : [d.maker, d.ip, d.wired ? 'Wired' : ''].filter(Boolean).join(' · ') || d.mac;
+    : d.ip || '--';
+  const info = [d.maker, d.wired ? 'Wired' : ''].filter(Boolean).join(' · ');
   const off = busy.has(d.mac) ? 'disabled' : '';
   const pa = d.paused ? 'unpause' : 'pause';
   const ba = d.blocked ? 'unblock' : 'block';
   return `<article class="card ${st} ${selected.has(d.mac) ? 'sel' : ''}" style="--h:${hue(d.name)}">
     <input type="checkbox" class="pick" data-sel="${esc(d.mac)}" aria-label="Select ${esc(d.name)}" ${selected.has(d.mac) ? 'checked' : ''}>
     <div class="avatar">${esc((d.name.trim()[0] || '?').toUpperCase())}</div>
-    <div class="meta"><h3 data-mac="${esc(d.mac)}" title="${esc(d.name)} (double-click to rename)">${esc(d.name)}</h3><p>${esc(sub)}</p></div>
+    <div class="meta"><h3 data-mac="${esc(d.mac)}" title="${esc(d.name)} (double-click to rename)">${esc(d.name)}</h3><p title="${esc(info)}">${esc(ip)}</p><p>${esc(d.mac)}</p></div>
     <span class="pill ${st}">${st}</span>
     <div class="actions">
       <button class="btn ${d.paused ? 'active' : ''}" data-m="${esc(d.mac)}" data-a="${pa}" ${off}>${d.paused ? 'Resume' : 'Pause'}</button>
