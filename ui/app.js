@@ -23,18 +23,22 @@ const load = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } 
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 let nicks = load('nicks');
 let groups = load('groups');
+let seenInfo = load('seenInfo');
+let unseen = new Set();
 const withNick = (d) => ({ ...d, orig: d.name, name: nicks[d.mac] || d.name });
 let lastOk = 0;
 let loading = false;
 
 try { known = new Set(JSON.parse(localStorage.getItem('known') || 'null')); if (!known.size) known = null; } catch { known = null; }
+try { unseen = new Set(JSON.parse(localStorage.getItem('unseen') || '[]')); } catch {}
 
-function toast(msg, kind = '') {
+function toast(msg, kind = '', onClick) {
   const t = document.createElement('div');
   t.className = 'toast ' + kind;
   t.textContent = msg;
+  if (onClick) { t.classList.add('act'); t.onclick = () => { onClick(); t.remove(); }; }
   $('#toasts').append(t);
-  setTimeout(() => t.remove(), 4500);
+  setTimeout(() => t.remove(), onClick ? 15000 : 4500);
 }
 
 const t12 = (t) => { const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
@@ -95,7 +99,7 @@ function card(d) {
   return `<article class="card ${st} ${selected.has(d.mac) ? 'sel' : ''}" style="--h:${hue(d.name)}">
     <input type="checkbox" class="pick" data-sel="${esc(d.mac)}" aria-label="Select ${esc(d.name)}" ${selected.has(d.mac) ? 'checked' : ''}>
     <div class="avatar">${esc((d.name.trim()[0] || '?').toUpperCase())}</div>
-    <div class="meta"><h3 data-mac="${esc(d.mac)}" title="${esc(d.name)} (double-click to rename)">${esc(d.name)}</h3><p title="${esc(info)}">${esc(ip)}</p><p>${esc(d.mac)}</p></div>
+    <div class="meta"><h3 data-mac="${esc(d.mac)}" title="${esc(d.name)} (double-click to rename)">${esc(d.name)}</h3><p title="${esc(info)}">${esc(ip)}${unseen.has(d.mac) ? ` <button class="pill new" data-ack="${esc(d.mac)}" title="Mark as known">New</button>` : ''}</p><p>${esc(d.mac)}</p></div>
     <span class="pill ${st}">${st}</span>
     <div class="actions">
       <button class="btn ${d.paused ? 'active' : ''}" data-m="${esc(d.mac)}" data-a="${pa}" ${off}>${d.paused ? 'Resume' : 'Pause'}</button>
@@ -146,11 +150,13 @@ function renderGroups() {
   }).join('');
 }
 
+const ruledMacs = () => new Set([...schedules.map((s) => s.mac), ...Object.keys(nicks), ...Object.values(groups).flat()]);
+
 let swapHtml = '';
 function renderSwap() {
   if (!$('#swap').open) return;
-  const known = new Set(devices.map((d) => d.mac));
-  const orphans = new Set([...schedules.map((s) => s.mac), ...Object.keys(nicks), ...Object.values(groups).flat()].filter((m) => !known.has(m)));
+  const present = new Set(devices.map((d) => d.mac));
+  const orphans = new Set([...ruledMacs()].filter((m) => !present.has(m)));
   const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
   const from = [...orphans].map((m) => opt(m, `${nicks[m] || m} (not on network)`)).join('') +
     [...devices].sort((a, b) => a.connected - b.connected || a.name.localeCompare(b.name)).map((d) => opt(d.mac, d.name + (d.connected ? '' : ' (offline)'))).join('');
@@ -164,6 +170,14 @@ function renderSwap() {
   if (t) $('#sw-to').value = t;
 }
 $('#swap').ontoggle = renderSwap;
+function openSwap(from, to) {
+  $('#swap').open = true;
+  swapHtml = '';
+  renderSwap();
+  $('#sw-from').value = from;
+  $('#sw-to').value = to;
+  $('#swap').scrollIntoView();
+}
 
 $('#swap-form').onsubmit = async (e) => {
   e.preventDefault();
@@ -213,13 +227,34 @@ function tick() {
   $('#live').classList.toggle('stale', s > REFRESH_MS / 500);
 }
 
+function persist() {
+  save('known', known && [...known]);
+  save('unseen', [...unseen]);
+  save('seenInfo', seenInfo);
+}
+
+function ack(mac) {
+  if (!unseen.delete(mac)) return;
+  known.add(mac);
+  persist();
+}
+
 function detectNew(list) {
-  const macs = new Set(list.map((d) => d.mac));
+  const ruled = ruledMacs();
+  const present = new Set(list.map((d) => d.mac));
+  const orphans = [...ruled].filter((m) => !present.has(m));
   if (known) {
-    list.filter((d) => !known.has(d.mac)).forEach((d) => toast(`New device joined: ${d.name}`, 'new'));
+    list.filter((d) => !known.has(d.mac) && !unseen.has(d.mac)).forEach((d) => {
+      unseen.add(d.mac);
+      toast(`New device joined: ${d.name}`, 'new');
+      const old = orphans.find((m) => (seenInfo[m]?.name && seenInfo[m].name === d.orig) || (seenInfo[m]?.maker && seenInfo[m].maker === d.maker));
+      if (old) toast(`Looks like ${nicks[old] || seenInfo[old].name}. Move its rules?`, 'new', () => openSwap(old, d.mac));
+    });
   }
-  known = new Set([...(known || []), ...macs]);
-  try { localStorage.setItem('known', JSON.stringify([...known])); } catch {}
+  list.filter((d) => ruled.has(d.mac)).forEach((d) => { seenInfo[d.mac] = { name: d.orig, maker: d.maker }; });
+  $('#seed-n').textContent = `${list.length} devices found.`;
+  $('#seed').hidden = !!known || !list.length;
+  persist();
 }
 
 async function refresh(manual = false) {
@@ -290,7 +325,15 @@ $('#f-code').onsubmit = async (e) => {
   } catch (x) { $('#login-err').textContent = String(x); }
 };
 
+$('#seed-btn').onclick = () => {
+  known = new Set(devices.map((d) => d.mac));
+  persist();
+  $('#seed').hidden = true;
+};
+
 $('#grid').onclick = async (e) => {
+  const n = e.target.closest('[data-ack]');
+  if (n) { ack(n.dataset.ack); return renderGrid(); }
   const b = e.target.closest('button[data-a]');
   if (!b) return;
   const { m, a } = b.dataset;
@@ -351,6 +394,7 @@ $('#grid').ondblclick = (e) => {
       if (v && v !== d.orig) nicks[d.mac] = v; else delete nicks[d.mac];
       save('nicks', nicks);
       d.name = nicks[d.mac] || d.orig;
+      if (nicks[d.mac]) ack(d.mac);
     }
     gridHtml = '';
     renderAll();
@@ -490,7 +534,7 @@ $('#pin').onclick = async () => { pinned = !pinned; await win.setAlwaysOnTop(pin
 $('#min').onclick = () => win.minimize();
 $('#close').onclick = () => win.close();
 $('#refresh').onclick = () => refresh(true);
-$('#logout').onclick = async () => { await invoke('logout'); devices = []; known = null; showLogin(); };
+$('#logout').onclick = async () => { await invoke('logout'); devices = []; known = null; unseen = new Set(); persist(); showLogin(); };
 
 listen('schedule-ran', (e) => {
   const { mac, action, error } = e.payload;

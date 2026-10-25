@@ -92,6 +92,9 @@ select option { background: #151822; }
 .pill.offline { color: var(--muted); background: var(--surface); }
 .pill.paused { color: var(--warn); background: rgba(251, 191, 36, 0.12); }
 .pill.blocked { color: var(--bad); background: rgba(248, 113, 113, 0.12); }
+button.pill.new { border: 0; cursor: pointer; margin-left: 6px; padding: 1px 8px; font-family: inherit; color: #22d3ee; background: rgba(34, 211, 238, 0.14); }
+.seed { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.toast.act { cursor: pointer; }
 .actions { grid-column: 2 / 4; display: flex; gap: 8px; margin-top: 8px; }
 .btn { flex: 1; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 13px; transition: all 0.15s; }
 .btn:hover { background: var(--surface-hi); border-color: rgba(255, 255, 255, 0.2); }
