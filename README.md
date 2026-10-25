@@ -4,7 +4,7 @@ Tollgate is a Windows desktop app that controls the devices on your eero mesh Wi
 
 ![Tollgate showing four devices, a row of statistics, and the Daily schedules panel. The device names and addresses are sample data.](docs/screenshot.png)
 
-I built Tollgate as a parent. I had too little time to switch off my kids' internet by hand, so I made the app do it on a schedule.
+I built Tollgate as a parent. I had too little time to switch off my kids' internet by hand, so I made the app do it on a schedule. Unlike eero's profile schedules, Tollgate's work per device or group, but they run only while the app is open.
 
 This guide is for people who use the app. To build it from source, run `cargo build --release` and open `target/release/tollgate.exe`.
 
@@ -76,6 +76,14 @@ To keep the window above other windows, click the pin icon in the title bar.
 ## Move settings to a device with a new address
 
 When a device reconnects under a new entry, its schedules, nickname, and groups stay with the old entry. Open **Device got a new address?**, choose the old and the new entry, and click **Move settings**.
+
+## Spot new devices
+
+The first time you sign in, Tollgate asks whether to mark the devices it finds as known. After that, any device that joins gets a **New** tag on its card. The tag stays until you click it or rename the device.
+
+If the new device has the same name or maker as a device that has schedules but is no longer on the network, Tollgate offers to move those settings. It never moves them on its own.
+
+Tollgate identifies a device by its MAC address, so a change of IP address does not affect it. It cannot stop someone who changes or copies a MAC address. Phones and Windows 11 can use a private Wi-Fi address that changes when the network is forgotten and joined again. To avoid this, turn off the private address for your home Wi-Fi on your children's devices. Then lock that setting with Screen Time on iPhone or Family Link on Android.
 
 ## Where the app stores data
 
