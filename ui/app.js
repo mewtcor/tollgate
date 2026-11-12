@@ -68,6 +68,8 @@ const nameOf = (mac) => (devices.find((d) => d.mac === mac) || {}).name || mac;
 
 function renderStats() {
   const on = devices.filter((d) => d.connected && !d.blocked).length;
+  const paused = devices.filter((d) => d.paused).length;
+  const blocked = devices.filter((d) => d.blocked).length;
   const now = new Date();
   const mins = (s) => {
     const [h, m] = s.time.split(':').map(Number);
@@ -80,10 +82,10 @@ function renderStats() {
   };
   const next = schedules.filter((s) => s.enabled !== false).sort((a, b) => mins(a) - mins(b))[0];
   $('#stats').innerHTML =
-    `<div class="stat ok"><b>${on}</b><span>Online</span></div>` +
+    `<div class="stat"><b>${on}</b><span>Online</span></div>` +
     `<div class="stat"><b>${devices.length}</b><span>Devices</span></div>` +
-    `<div class="stat warn"><b>${devices.filter((d) => d.paused).length}</b><span>Paused</span></div>` +
-    `<div class="stat bad"><b>${devices.filter((d) => d.blocked).length}</b><span>Blocked</span></div>` +
+    `<div class="stat ${paused ? 'warn' : ''}"><b>${paused}</b><span>Paused</span></div>` +
+    `<div class="stat ${blocked ? 'bad' : ''}"><b>${blocked}</b><span>Blocked</span></div>` +
     `<div class="stat next"><b>${next ? t12(next.time) : '--'}</b><span>${next ? esc(ACTION_LABEL[next.action] + ' ' + nameOf(next.mac)) : 'No schedules'}</span></div>`;
 }
 
