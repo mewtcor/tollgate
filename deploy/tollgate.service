@@ -1,0 +1,31 @@
+# Runs Tollgate around the clock. Installed by deploy/install.sh to /etc/systemd/system/tollgate.service.
+[Unit]
+Description=Tollgate: eero timers and schedules
+Wants=network-online.target time-sync.target
+# wait for the clock to sync so a schedule does not fire at the wrong time right after boot
+After=network-online.target time-sync.target
+
+[Service]
+ExecStart=/usr/local/bin/tollgate-server
+User=tollgate
+Group=tollgate
+StateDirectory=tollgate
+StateDirectoryMode=0700
+Environment=TOLLGATE_DATA=/var/lib/tollgate
+Environment=TOLLGATE_BIND=0.0.0.0:8787
+# holds TOLLGATE_PASSWORD; mode 0600, owned by root
+EnvironmentFile=-/etc/tollgate.env
+UMask=0077
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

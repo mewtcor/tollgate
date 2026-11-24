@@ -7,6 +7,9 @@ authors = ["mewtcor"]
 repository = "https://github.com/mewtcor/tollgate"
 readme = "README.md"
 
+[workspace]
+members = ["crates/core", "crates/server"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -14,12 +17,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
-serde = { version = "1", features = ["derive"] }
+tollgate-core = { path = "crates/core" }
 serde_json = "1"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-tokio = { version = "1", features = ["sync", "time"] }
-chrono = "0.4"
 
+# applies to every crate in the workspace, including the server
 [profile.release]
 opt-level = "s"
 lto = true

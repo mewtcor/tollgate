@@ -1,6 +1,15 @@
-const { invoke } = window.__TAURI__.core;
-const { listen } = window.__TAURI__.event;
-const win = window.__TAURI__.window.getCurrentWindow();
+// Runs inside the Tauri desktop app, or in a browser served by tollgate-server, which takes the same commands over HTTP.
+const TAURI = window.__TAURI__;
+const invoke = TAURI ? TAURI.core.invoke : async (cmd, args = {}) => {
+  const r = await fetch(`api/${cmd}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(args) });
+  const v = await r.json().catch(() => null);
+  if (!r.ok) throw (v && v.error) || `Server said ${r.status}`;
+  return v;
+};
+const listen = TAURI ? TAURI.event.listen : (name, fn) => {
+  new EventSource('api/events').addEventListener(name, (m) => fn({ payload: JSON.parse(m.data) }));
+};
+const win = TAURI ? TAURI.window.getCurrentWindow() : null;
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -19,18 +28,48 @@ let selected = new Set();
 let editing = false;
 let editIdx = null;
 
-const load = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-let nicks = load('nicks');
-let groups = load('groups');
-let seenInfo = load('seenInfo');
+// Nicknames, groups and new-device tracking are kept by the backend (prefs.json), so every browser sees the same ones.
+// Writes go out one at a time, and only when a value changed.
+const PREF_KEYS = ['nicks', 'groups', 'seenInfo', 'known', 'unseen'];
+const sent = {};
+let writes = Promise.resolve();
+let pendingWrites = 0;
+const save = (k, v) => {
+  const j = JSON.stringify(v ?? null);
+  if (sent[k] === j) return;
+  sent[k] = j;
+  pendingWrites++;
+  writes = writes
+    .then(() => invoke('set_pref', { key: k, value: v ?? null }))
+    .catch((e) => { delete sent[k]; toast(`Could not save: ${e}`, 'err'); })
+    .finally(() => pendingWrites--);
+};
+let nicks = {};
+let groups = {};
+let seenInfo = {};
 let unseen = new Set();
 const withNick = (d) => ({ ...d, orig: d.name, name: nicks[d.mac] || d.name });
 let lastOk = 0;
 let loading = false;
 
-try { known = new Set(JSON.parse(localStorage.getItem('known') || 'null')); if (!known.size) known = null; } catch { known = null; }
-try { unseen = new Set(JSON.parse(localStorage.getItem('unseen') || '[]')); } catch {}
+async function loadPrefs() {
+  if (pendingWrites) return;
+  let p = await invoke('get_prefs');
+  if (!Object.keys(p).length) {
+    // first run after the move off localStorage: carry over what this window saved before
+    const old = {};
+    for (const k of PREF_KEYS) { try { const v = JSON.parse(localStorage.getItem(k)); if (v != null) old[k] = v; } catch {} }
+    for (const k of Object.keys(old)) await invoke('set_pref', { key: k, value: old[k] });
+    p = old;
+  }
+  const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+  nicks = obj(p.nicks);
+  groups = obj(p.groups);
+  seenInfo = obj(p.seenInfo);
+  known = Array.isArray(p.known) && p.known.length ? new Set(p.known) : null;
+  unseen = new Set(Array.isArray(p.unseen) ? p.unseen : []);
+  for (const k of PREF_KEYS) sent[k] = JSON.stringify(p[k] ?? null);
+}
 
 function toast(msg, kind = '', onClick) {
   const t = document.createElement('div');
@@ -137,7 +176,7 @@ function renderSched() {
   $('#sched-note').textContent = schedules.length ? `${schedules.length} active` : '';
   $('#sched-list').innerHTML = schedules.length
     ? schedules.map((s, i) => `<div class="sched${s.enabled === false ? ' off' : ''}${editIdx === i ? ' editing' : ''}"><input type="checkbox" class="tog" data-tog="${i}" title="Enabled" ${s.enabled === false ? '' : 'checked'}><b>${esc(nameOf(s.mac))}</b><span class="days-label">${daysLabel(s.days || [])}</span><span class="tag">${esc(ACTION_LABEL[s.action])}</span><span class="time">${t12(s.time)}</span><button class="icon" data-edit="${i}" aria-label="Edit schedule" title="Edit"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg></button><button class="icon" data-del="${i}" aria-label="Remove schedule"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join('')
-    : '<p class="muted">Nothing scheduled. Add one below and it runs every day while this app is open.</p>';
+    : `<p class="muted">Nothing scheduled. Add one below and it runs on the days you pick${TAURI ? ' while this app is open' : ''}.</p>`;
 }
 
 function renderGroups() {
@@ -264,6 +303,7 @@ async function refresh(manual = false) {
   loading = true;
   if (manual) $('#refresh').classList.add('spin');
   try {
+    await loadPrefs();
     devices = (await invoke('devices')).map(withNick);
     detectNew(devices);
     markUpdated();
@@ -531,10 +571,11 @@ $('#bulk-timer').onchange = async (e) => {
   if (minutes) await bulk((mac) => invoke('pause_for', { mac, minutes }), (mac) => applyLocal(mac, 'pause'));
 };
 
+if (!win) ['#pin', '#min', '#close'].forEach((s) => $(s).remove());
 let pinned = false;
-$('#pin').onclick = async () => { pinned = !pinned; await win.setAlwaysOnTop(pinned); $('#pin').classList.toggle('on', pinned); };
-$('#min').onclick = () => win.minimize();
-$('#close').onclick = () => win.close();
+if (win) $('#pin').onclick = async () => { pinned = !pinned; await win.setAlwaysOnTop(pinned); $('#pin').classList.toggle('on', pinned); };
+if (win) $('#min').onclick = () => win.minimize();
+if (win) $('#close').onclick = () => win.close();
 $('#refresh').onclick = () => refresh(true);
 $('#logout').onclick = async () => { await invoke('logout'); devices = []; known = null; unseen = new Set(); persist(); showLogin(); };
 
