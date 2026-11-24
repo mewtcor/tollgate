@@ -67,6 +67,15 @@ pub struct Schedule {
     days: Vec<u8>,
     #[serde(default = "yes")]
     enabled: bool,
+    /// Links the entries of one schedule as the UI shows it: a time range is a pause plus a resume, and a group schedule has entries for every member.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    rule: Option<String>,
+    /// The schedule's name, such as "Bedtime".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+    /// The group the schedule was made for, so the UI can follow changes to its members.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    group: Option<String>,
 }
 
 fn yes() -> bool {
@@ -313,7 +322,8 @@ impl Eero {
     pub fn set_schedules(&self, items: Vec<Schedule>) -> Result<(), String> {
         for i in &items {
             chrono::NaiveTime::parse_from_str(&i.time, "%H:%M").map_err(|_| "Time must be HH:MM")?;
-            if !valid_mac(&i.mac) || !ACTIONS.contains(&i.action.as_str()) || i.days.iter().any(|&d| d > 6) {
+            let long = [&i.rule, &i.name, &i.group].iter().any(|v| v.as_ref().is_some_and(|t| t.chars().count() > 64));
+            if !valid_mac(&i.mac) || !ACTIONS.contains(&i.action.as_str()) || i.days.iter().any(|&d| d > 6) || long {
                 return Err("Bad schedule".into());
             }
         }
