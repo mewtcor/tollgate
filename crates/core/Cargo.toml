@@ -1,0 +1,13 @@
+[package]
+name = "tollgate-core"
+version = "0.1.1"
+edition = "2021"
+description = "eero client, timers, schedules and saved settings shared by the Tollgate desktop app and server"
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["sync", "time"] }
+chrono = "0.4"
