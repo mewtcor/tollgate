@@ -2,110 +2,94 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Tollgate</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="titlebar" data-tauri-drag-region>
-  <div class="brand" data-tauri-drag-region>
-    <span class="logo"></span>
-    <span class="title" data-tauri-drag-region>Network</span>
-    <span class="live" id="live" title="Auto-refreshing"><i></i><span id="updated">connecting</span></span>
-  </div>
+<header class="titlebar" id="titlebar" data-tauri-drag-region hidden>
+  <span class="title" data-tauri-drag-region>Tollgate</span>
   <div class="winbtns">
-    <button id="refresh" class="icon" title="Refresh now" aria-label="Refresh"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
-    <button id="pin" class="icon" title="Keep on top" aria-label="Keep on top"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 14v7"/></svg></button>
-    <button id="logout" class="icon" title="Sign out" aria-label="Sign out" hidden><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></button>
+    <button id="pin" class="icon" title="Keep on top" aria-label="Keep on top" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6ZM12 14v7"/></svg></button>
     <button id="min" class="icon" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-    <button id="close" class="icon close" title="Hide to tray" aria-label="Hide to tray"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <button id="close" class="icon" title="Hide to tray" aria-label="Hide to tray"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
 </header>
 
-<main>
+<main id="main">
   <section id="login" class="login" hidden>
     <div class="login-card">
-      <div class="logo big"></div>
+      <div class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01"/></svg></div>
       <h1>Sign in to eero</h1>
       <p class="muted" id="login-hint">Use the email or phone number on your eero account. We will send you a code.</p>
       <form id="f-user">
-        <input id="user" placeholder="Email or phone" autocomplete="username" required>
-        <button class="primary" type="submit">Send code</button>
+        <label class="field"><span>Email or phone</span><input id="user" autocomplete="username" required></label>
+        <button class="btn primary big" type="submit">Send code</button>
       </form>
       <form id="f-code" hidden>
-        <input id="code" placeholder="6 digit code" inputmode="numeric" autocomplete="one-time-code" required>
-        <button class="primary" type="submit">Verify</button>
+        <label class="field"><span>6 digit code</span><input id="code" inputmode="numeric" autocomplete="one-time-code" required></label>
+        <button class="btn primary big" type="submit">Verify</button>
       </form>
-      <p class="err" id="login-err"></p>
+      <p class="err" id="login-err" role="alert"></p>
     </div>
   </section>
 
-  <section id="dash" hidden>
-    <div class="stats" id="stats"></div>
-
-    <div class="toolbar">
-      <div class="chips" id="chips">
-        <button class="chip on" data-f="all">All</button>
-        <button class="chip" data-f="online">Online</button>
-        <button class="chip" data-f="paused">Paused</button>
-        <button class="chip" data-f="blocked">Blocked</button>
-      </div>
-      <input id="q" class="search" type="search" placeholder="Search devices" aria-label="Search devices">
-    </div>
-
-    <div class="groups" id="groups" hidden>
-      <div class="chips" id="group-chips"></div>
-      <form id="group-form" hidden>
-        <input id="gname" placeholder="Group name" maxlength="24" required aria-label="Group name">
-        <button class="primary" type="submit">Save group</button>
-      </form>
-      <div class="bulk" id="bulk" hidden>
-        <b id="bulk-n"></b>
-        <button class="btn" data-b="pause">Pause</button>
-        <button class="btn" data-b="unpause">Resume</button>
-        <select class="btn timer" id="bulk-timer" aria-label="Pause for a while">
-          <option value="">Timer</option><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option><option value="240">4 hours</option>
-        </select>
-        <button class="btn danger" data-b="block">Block</button>
-        <button class="btn" data-b="unblock">Unblock</button>
-        <button class="btn" id="bulk-clear">Clear</button>
+  <!-- Devices tab -->
+  <section id="tab-devices" class="tab" hidden>
+    <div class="topline">
+      <span class="live" id="live"><i></i><span id="updated">Connecting</span></span>
+      <div class="tools">
+        <button class="icon" id="search-btn" aria-label="Search devices" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+        <button class="icon" id="refresh" aria-label="Refresh"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
       </div>
     </div>
+    <h1 class="h1">Home network</h1>
+    <p class="sub" id="summary"></p>
+    <input id="q" class="search" type="search" placeholder="Search by name, IP or maker" aria-label="Search devices" hidden>
 
-    <div class="panel seed" id="seed" hidden><span id="seed-n"></span> Mark them as known?<button class="primary" id="seed-btn" type="button">Mark as known</button></div>
+    <div id="next"></div>
+    <div id="banners"></div>
 
-    <div class="grid" id="grid"></div>
+    <div class="chips-row">
+      <div class="chips" id="group-chips" role="tablist" aria-label="Groups"></div>
+      <button class="link" id="select-btn">Select</button>
+    </div>
+    <div id="group-card"></div>
+    <div class="list" id="list"></div>
+  </section>
 
-    <section class="panel">
-      <div class="panel-head"><h2>Daily schedules</h2><span class="muted" id="sched-note"></span></div>
-      <div id="sched-list" class="sched-list"></div>
-      <form id="sched-form" class="sched-form">
-        <div class="days" id="days">
-          <button type="button" class="chip on" data-d="0">Sun</button><button type="button" class="chip on" data-d="1">Mon</button><button type="button" class="chip on" data-d="2">Tue</button><button type="button" class="chip on" data-d="3">Wed</button><button type="button" class="chip on" data-d="4">Thu</button><button type="button" class="chip on" data-d="5">Fri</button><button type="button" class="chip on" data-d="6">Sat</button>
-          <span class="presets"><button type="button" data-p="1,2,3,4,5">Weekdays</button><button type="button" data-p="0,6">Weekends</button><button type="button" data-p="0,1,2,3,4,5,6">Every day</button></span>
-        </div>
-        <select id="sm" aria-label="Device"></select>
-        <select id="sa" aria-label="Action">
-          <option value="pause">Pause</option><option value="unpause">Resume</option>
-          <option value="block">Block</option><option value="unblock">Unblock</option>
-        </select>
-        <input id="st" type="time" value="21:00" required aria-label="Time">
-        <button class="primary" type="submit" id="sched-submit">Add</button>
-        <button class="btn cancel" type="button" id="sched-cancel" hidden>Cancel</button>
-      </form>
-    </section>
+  <!-- Schedules tab -->
+  <section id="tab-schedules" class="tab" hidden>
+    <div class="topline"></div>
+    <h1 class="h1">Schedules</h1>
+    <p class="sub" id="sched-sub"></p>
+    <div id="today"></div>
+    <div id="rules" class="rules"></div>
+    <button class="fab" id="add-rule"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New schedule</button>
+  </section>
 
-    <details class="panel" id="swap">
-      <summary>Device got a new address?</summary>
-      <p class="muted">Pick the old entry and the new one. Its schedules, nickname and groups move over.</p>
-      <form id="swap-form" class="sched-form">
-        <select id="sw-from" aria-label="Old device"></select>
-        <select id="sw-to" aria-label="New device"></select>
-        <button class="primary" type="submit">Move settings</button>
-      </form>
-    </details>
+  <!-- Settings tab -->
+  <section id="tab-settings" class="tab" hidden>
+    <div class="topline"></div>
+    <h1 class="h1">Settings</h1>
+    <div id="settings"></div>
   </section>
 </main>
+
+<nav class="tabbar" id="tabbar" hidden>
+  <button data-tab="devices" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01"/></svg><span>Devices</span></button>
+  <button data-tab="schedules"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Schedules</span></button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Settings</span></button>
+</nav>
+
+<div class="selbar" id="selbar" hidden></div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden></div>
 
 <div id="toasts" aria-live="polite"></div>
 <script src="app.js"></script>

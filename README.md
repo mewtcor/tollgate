@@ -2,7 +2,7 @@
 
 Tollgate is a Windows desktop app that controls the devices on your eero mesh Wi-Fi network. From one window you can pause, resume, block, and unblock devices, set timers, and run daily schedules. It can also run around the clock on a Linux box and serve the same screen to any browser; see [Run it 24/7 on Linux](#run-it-247-on-linux).
 
-![Tollgate showing four devices, a row of statistics, and the Daily schedules panel. The device names and addresses are sample data.](docs/screenshot.png)
+![Tollgate on a phone: the Devices tab with the next schedule, group chips and a list of devices with Pause and Resume buttons. The device names and addresses are sample data.](docs/screenshot.png)
 
 I built Tollgate as a parent. I had too little time to switch off my kids' internet by hand, so I made the app do it on a schedule. Unlike eero's profile schedules, Tollgate's work per device or group. In the desktop app they run only while it is open; the Linux server runs them around the clock.
 
@@ -23,43 +23,42 @@ The installer is for 64-bit Windows. I tested it only on Windows 11.
 3. Click **Send code**. Eero sends you a code.
 4. Enter the code and click **Verify**.
 
-The device list appears and refreshes every 15 seconds. The app stays signed in until you click **Sign out** in the title bar.
+The device list appears and refreshes every 15 seconds. The app stays signed in until you click **Sign out** on the **Settings** tab.
+
+## Find your way around
+
+Tollgate has three tabs at the bottom: **Devices**, **Schedules** and **Settings**. On a wide screen, panels open in the middle of the window; on a phone they slide up from the bottom.
 
 ## Pause or block a device
 
-Each device has a card with a **Pause** button and a **Block** button.
+Each device in the list has one button. **Pause** cuts the device off from the internet, and **Resume** restores it. A blocked device shows **Unblock** instead.
 
-- **Pause** cuts the device off from the internet. Click **Resume** to restore it.
-- **Block** keeps the device off your network. Click **Block** a second time within 3 seconds to confirm. Click **Unblock** to let it back on.
+Tap a device's name to open its panel. From there you can:
 
-To find a device, use the **All**, **Online**, **Paused**, and **Blocked** filters, or type in the search box.
+- pause it for 30 minutes, 1 hour, 2 hours, or until 7 am. It resumes on its own when the time is up. The timer survives a restart, and resuming it yourself cancels the timer.
+- block it from your network. Tap **Block from network** a second time within 3 seconds to confirm. A blocked device stays off until you unblock it.
+- rename it with the pencil icon. The name is stored by Tollgate only; eero and the eero app keep the original name.
+- add it to groups or take it out of them, and see its schedules.
 
-## Pause a device for a set time
+To find a device, tap the search icon at the top of the **Devices** tab.
 
-To pause a device and resume it automatically, choose a time from the **Timer** list on its card: 30 min, 1 hour, 2 hours, or 4 hours.
+## Use groups
 
-The timer survives a restart of the app. If you resume the device yourself before the time is up, the timer is cancelled.
+Groups are chips above the device list, such as **Kids** or **TVs**. Tap a group to show only its devices, with **Pause all**, **Resume all** and a quick timer for the whole group. Tap **+ Group** to make one, and the pencil on a group to rename it, change its devices, or delete it. Groups are stored by Tollgate only.
 
-## Rename a device
+To act on devices that are not in a group, press and hold a device, or tap **Select**. Tick the devices you want, then use the bar at the bottom: **Pause**, **Resume**, a timer, **Add to group**, **Block** or **Unblock**.
 
-Double-click the device name, type a new name, and press Enter. The name is stored by Tollgate only. Eero and the eero app keep the original name.
+## Schedule devices
 
-## Act on several devices at once
+Schedules repeat every week on the days you pick. On the **Schedules** tab, tap **New schedule**.
 
-1. Tick the checkbox on each card you want.
-2. Use the bar that appears: **Pause**, **Resume**, **Timer**, **Block**, or **Unblock**.
+1. Give it a name, such as Bedtime.
+2. Under **Who**, pick a group or a device. A schedule for a group follows the group: add a device to the group and the schedule covers it too.
+3. Under **What**, choose **Offline for a while** and set when the internet goes off and when it comes back, such as 9 pm to 7 am. If the end time is earlier than the start, it comes back the next morning. Or choose **One action** to pause, resume, block, or unblock at one time.
+4. Pick the days. For an overnight schedule, pick the nights it starts. **School nights** means Sunday to Thursday.
+5. Tap **Save**.
 
-To reuse a selection, type a name in the **Group name** box and click **Save group**. Click a group chip to select all of its devices. Click the **×** on a chip to delete the group. Groups are stored by Tollgate only.
-
-## Schedule an action
-
-Schedules repeat every week on the days you pick.
-
-1. In **Daily schedules**, choose the days. Click **Weekdays**, **Weekends**, or **Every day** for a shortcut.
-2. Choose a device, an action, and a time.
-3. Click **Add**.
-
-If you have devices selected, the schedule applies to all of them. To edit a schedule, click its pencil icon. To turn a schedule off without deleting it, clear its checkbox.
+The bar at the top of the tab shows today's offline time. Tap a schedule to change or delete it, and use its switch to turn it off without deleting it. The next schedule to run is shown at the top of the **Devices** tab.
 
 ## Keep it running in the background
 
@@ -71,17 +70,17 @@ Right-click the tray icon for these options:
 - **Start with Windows** starts the app hidden when you sign in to Windows.
 - **Quit** stops the app, its timers, and its schedules.
 
-To keep the window above other windows, click the pin icon in the title bar.
-
-## Move settings to a device with a new address
-
-When a device reconnects under a new entry, its schedules, nickname, and groups stay with the old entry. Open **Device got a new address?**, choose the old and the new entry, and click **Move settings**.
+To keep the window above other windows, click the pin icon in the title bar, or turn on **Keep on top** on the **Settings** tab.
 
 ## Spot new devices
 
-The first time you sign in, Tollgate asks whether to mark the devices it finds as known. After that, any device that joins gets a **New** tag on its card. The tag stays until you click it or rename the device.
+The first time you sign in, Tollgate offers to mark the devices it finds as known. After that, when a device joins, a banner on the **Devices** tab says so. Tap **Review** to look at each new device and choose **Looks fine**, **Block it**, or give it a name first.
 
-If the new device has the same name or maker as a device that has schedules but is no longer on the network, Tollgate offers to move those settings. It never moves them on its own.
+If the new device has the same name or maker as a device that has a name, schedules or groups but is no longer on the network, the review asks whether it is the same device and shows what would move. Tollgate never moves settings on its own.
+
+## Move settings to a device with a new address
+
+When a device reconnects under a new entry, its schedules, name and groups stay with the old entry. On the **Settings** tab, tap **Move settings to a new address**, choose the old and the new entry, and tap **Move settings**. You can also start from the new device's panel.
 
 Tollgate identifies a device by its MAC address, so a change of IP address does not affect it. It cannot stop someone who changes or copies a MAC address. Phones and Windows 11 can use a private Wi-Fi address that changes when the network is forgotten and joined again. To avoid this, turn off the private address for your home Wi-Fi on your children's devices. Then lock that setting with Screen Time on iPhone or Family Link on Android.
 
@@ -89,7 +88,7 @@ Tollgate identifies a device by its MAC address, so a change of IP address does 
 
 Your sign-in session, schedules, timers, and device names, groups and new-device tags are in `%APPDATA%\dev.mewt.eero-widget` (`session.txt`, `schedules.json`, `timers.json`, `prefs.json`). Delete `session.txt` there to sign out by hand. Earlier versions kept names, groups and new-device tags inside the window; the first start of this version moves them into `prefs.json`.
 
-Tollgate saves the session in `session.txt` as plain text. Anyone who can read your Windows user profile can use it to act on your eero account. Click **Sign out** in the title bar to delete it when you stop using the app.
+Tollgate saves the session in `session.txt` as plain text. Anyone who can read your Windows user profile can use it to act on your eero account. Tap **Sign out** on the **Settings** tab to delete it when you stop using the app.
 
 ## Run it 24/7 on Linux
 
